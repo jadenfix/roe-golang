@@ -68,12 +68,14 @@ const (
 	GoogleSheets   ConnectorTypeEnum = "google_sheets"
 	Intercom       ConnectorTypeEnum = "intercom"
 	LexisNexis     ConnectorTypeEnum = "lexis_nexis"
+	Metabase       ConnectorTypeEnum = "metabase"
 	Plaid          ConnectorTypeEnum = "plaid"
 	S3             ConnectorTypeEnum = "s3"
 	Salesforce     ConnectorTypeEnum = "salesforce"
 	Sardine        ConnectorTypeEnum = "sardine"
 	Sharepoint     ConnectorTypeEnum = "sharepoint"
 	Shield         ConnectorTypeEnum = "shield"
+	Sift           ConnectorTypeEnum = "sift"
 	Snowflake      ConnectorTypeEnum = "snowflake"
 	Socure         ConnectorTypeEnum = "socure"
 	Stripe         ConnectorTypeEnum = "stripe"
@@ -100,6 +102,8 @@ func (e ConnectorTypeEnum) Valid() bool {
 		return true
 	case LexisNexis:
 		return true
+	case Metabase:
+		return true
 	case Plaid:
 		return true
 	case S3:
@@ -111,6 +115,8 @@ func (e ConnectorTypeEnum) Valid() bool {
 	case Sharepoint:
 		return true
 	case Shield:
+		return true
+	case Sift:
 		return true
 	case Snowflake:
 		return true
@@ -150,19 +156,19 @@ func (e DraftStatusEnum) Valid() bool {
 
 // Defines values for KnowledgeBaseStatusEnum.
 const (
-	Active   KnowledgeBaseStatusEnum = "active"
-	Drafting KnowledgeBaseStatusEnum = "drafting"
-	Orphaned KnowledgeBaseStatusEnum = "orphaned"
+	KnowledgeBaseStatusEnumActive   KnowledgeBaseStatusEnum = "active"
+	KnowledgeBaseStatusEnumDrafting KnowledgeBaseStatusEnum = "drafting"
+	KnowledgeBaseStatusEnumOrphaned KnowledgeBaseStatusEnum = "orphaned"
 )
 
 // Valid indicates whether the value is a known member of the KnowledgeBaseStatusEnum enum.
 func (e KnowledgeBaseStatusEnum) Valid() bool {
 	switch e {
-	case Active:
+	case KnowledgeBaseStatusEnumActive:
 		return true
-	case Drafting:
+	case KnowledgeBaseStatusEnumDrafting:
 		return true
-	case Orphaned:
+	case KnowledgeBaseStatusEnumOrphaned:
 		return true
 	default:
 		return false
@@ -205,6 +211,24 @@ func (e ReviewStatusEnum) Valid() bool {
 	case Pending:
 		return true
 	case Rejected:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SkillGenerationStateEnum.
+const (
+	SkillGenerationStateEnumFailed     SkillGenerationStateEnum = "failed"
+	SkillGenerationStateEnumGenerating SkillGenerationStateEnum = "generating"
+)
+
+// Valid indicates whether the value is a known member of the SkillGenerationStateEnum enum.
+func (e SkillGenerationStateEnum) Valid() bool {
+	switch e {
+	case SkillGenerationStateEnumFailed:
+		return true
+	case SkillGenerationStateEnumGenerating:
 		return true
 	default:
 		return false
@@ -598,7 +622,10 @@ type AgentVersion struct {
 
 	// OrganizationId Organization ID from base_agent.
 	OrganizationId *openapi_types.UUID `json:"organization_id,omitempty"`
-	Readonly       *bool               `json:"readonly,omitempty"`
+
+	// PostActions Connector write actions configured on this version.
+	PostActions *[]PostActionSpec `json:"post_actions,omitempty"`
+	Readonly    *bool             `json:"readonly,omitempty"`
 
 	// SupportsMemory True when this engine has a built-in memory profile, so memory profiles can be configured on it. Independent of whether memory is currently switched on.
 	SupportsMemory *bool `json:"supports_memory,omitempty"`
@@ -617,6 +644,9 @@ type AgentVersionCreateRequest struct {
 
 	// InputDefinitions List of input definitions for this agent version.
 	InputDefinitions interface{} `json:"input_definitions,omitempty"`
+
+	// PostActions Connector write actions for this version. Omitted: the new version keeps the current version's actions. A list: those become the new version's actions. []: the new version has none.
+	PostActions *[]PostActionSpecRequest `json:"post_actions,omitempty"`
 
 	// VersionName Version name for the agent version. Defaults to 'unnamed version' if not provided.
 	VersionName *string `json:"version_name,omitempty"`
@@ -664,8 +694,12 @@ type BaseAgent struct {
 
 	// OrganizationId Organization ID that owns this agent.
 	OrganizationId openapi_types.UUID `json:"organization_id"`
-	Tags           *[]AgentTag        `json:"tags,omitempty"`
-	UpdatedAt      *time.Time         `json:"updated_at,omitempty"`
+
+	// SkillGenerationState * `generating` - generating
+	// * `failed` - failed
+	SkillGenerationState SkillGenerationStateEnum `json:"skill_generation_state"`
+	Tags                 *[]AgentTag              `json:"tags,omitempty"`
+	UpdatedAt            *time.Time               `json:"updated_at,omitempty"`
 }
 
 // BaseAgentCreateRequest Serializer for creating base agents with proper JSON field handling
@@ -800,6 +834,7 @@ type ConnectorMetadata struct {
 // * `salesforce` - SALESFORCE
 // * `web_application` - WEB_APPLICATION
 // * `shield` - SHIELD
+// * `sift` - SIFT
 // * `custom_api` - CUSTOM_API
 // * `lexis_nexis` - LEXIS_NEXIS
 // * `sardine` - SARDINE
@@ -809,6 +844,7 @@ type ConnectorMetadata struct {
 // * `checkout_com` - CHECKOUT_COM
 // * `socure` - SOCURE
 // * `custom_mcp` - CUSTOM_MCP
+// * `metabase` - METABASE
 type ConnectorTypeEnum string
 
 // CreateConnectionRequest Serializer for creating connections.
@@ -827,6 +863,7 @@ type CreateConnectionRequest struct {
 	// * `salesforce` - SALESFORCE
 	// * `web_application` - WEB_APPLICATION
 	// * `shield` - SHIELD
+	// * `sift` - SIFT
 	// * `custom_api` - CUSTOM_API
 	// * `lexis_nexis` - LEXIS_NEXIS
 	// * `sardine` - SARDINE
@@ -836,6 +873,7 @@ type CreateConnectionRequest struct {
 	// * `checkout_com` - CHECKOUT_COM
 	// * `socure` - SOCURE
 	// * `custom_mcp` - CUSTOM_MCP
+	// * `metabase` - METABASE
 	ConnectorType  ConnectorTypeEnum   `json:"connector_type"`
 	Description    *string             `json:"description,omitempty"`
 	DynamicInputs  *map[string]string  `json:"dynamic_inputs,omitempty"`
@@ -1203,6 +1241,26 @@ type PolicyVersionCreatedBy struct {
 	Id          *int                 `json:"id,omitempty"`
 }
 
+// PostActionSpec Schema mirror of PostActionSpec (agents/services/post_actions.py);
+// generated clients import this component instead of hand-writing it.
+type PostActionSpec struct {
+	ConnectionId  openapi_types.UUID `json:"connection_id"`
+	Name          string             `json:"name"`
+	Operation     string             `json:"operation"`
+	ParamMappings map[string]string  `json:"param_mappings"`
+	TriggerOn     []int              `json:"trigger_on"`
+}
+
+// PostActionSpecRequest Schema mirror of PostActionSpec (agents/services/post_actions.py);
+// generated clients import this component instead of hand-writing it.
+type PostActionSpecRequest struct {
+	ConnectionId  openapi_types.UUID `json:"connection_id"`
+	Name          string             `json:"name"`
+	Operation     string             `json:"operation"`
+	ParamMappings map[string]string  `json:"param_mappings"`
+	TriggerOn     []int              `json:"trigger_on"`
+}
+
 // PublicAgentJobStatusEvent Customer-facing view of a status event.
 //
 // Same stored shape, but error text and error_details are passed through the
@@ -1260,6 +1318,10 @@ type ResolveRequest struct {
 // * `approved` - Approved
 // * `rejected` - Rejected
 type ReviewStatusEnum string
+
+// SkillGenerationStateEnum * `generating` - generating
+// * `failed` - failed
+type SkillGenerationStateEnum string
 
 // StatusEnum * `active` - Active
 // * `error` - Error
@@ -1457,6 +1519,7 @@ type TestConnectionCredentialsRequest struct {
 	// * `salesforce` - SALESFORCE
 	// * `web_application` - WEB_APPLICATION
 	// * `shield` - SHIELD
+	// * `sift` - SIFT
 	// * `custom_api` - CUSTOM_API
 	// * `lexis_nexis` - LEXIS_NEXIS
 	// * `sardine` - SARDINE
@@ -1466,6 +1529,7 @@ type TestConnectionCredentialsRequest struct {
 	// * `checkout_com` - CHECKOUT_COM
 	// * `socure` - SOCURE
 	// * `custom_mcp` - CUSTOM_MCP
+	// * `metabase` - METABASE
 	ConnectorType ConnectorTypeEnum  `json:"connector_type"`
 	DynamicInputs *map[string]string `json:"dynamic_inputs,omitempty"`
 }
@@ -10046,6 +10110,7 @@ type ConnectionsDestroyResponse struct {
 	HTTPResponse *http.Response
 	JSON400      *ConnectionDeleteErrorResponse
 	JSON404      *ErrorDetailResponse
+	JSON409      *ConnectionDeleteErrorResponse
 	JSON500      *ConnectionDeleteErrorResponse
 }
 
@@ -13388,6 +13453,13 @@ func ParseConnectionsDestroyResponse(rsp *http.Response) (*ConnectionsDestroyRes
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ConnectionDeleteErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest ConnectionDeleteErrorResponse
