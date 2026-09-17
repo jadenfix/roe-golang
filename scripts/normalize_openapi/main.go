@@ -130,6 +130,13 @@ func normalizeNullableUnion(node map[string]any, key string) {
 	}
 
 	delete(node, key)
+	if _, isRef := other["$ref"]; isRef {
+		// `nullable` is ignored as a sibling of `$ref` (OAS 3.0), so wrap the
+		// reference in allOf to keep the null-ness visible to oapi-codegen.
+		node["allOf"] = []any{other}
+		node["nullable"] = true
+		return
+	}
 	for childKey, childValue := range other {
 		node[childKey] = childValue
 	}

@@ -912,13 +912,11 @@ type DependentAgentInfo struct {
 
 // Draft Projected atlas draft returned from poll/regenerate/resolve endpoints.
 type Draft struct {
-	Company        string  `json:"company"`
-	CreatedAt      *string `json:"createdAt,omitempty"`
-	Error          *string `json:"error,omitempty"`
-	Id             string  `json:"id"`
-	IterationCount int     `json:"iterationCount"`
-
-	// PendingProposal A staged regeneration awaiting reviewer approval (names-only).
+	Company         string           `json:"company"`
+	CreatedAt       *string          `json:"createdAt,omitempty"`
+	Error           *string          `json:"error,omitempty"`
+	Id              string           `json:"id"`
+	IterationCount  int              `json:"iterationCount"`
 	PendingProposal *PendingProposal `json:"pendingProposal,omitempty"`
 	ProductName     *string          `json:"productName,omitempty"`
 	ProductSummary  string           `json:"productSummary"`
@@ -1021,13 +1019,13 @@ type ListAgentJob struct {
 
 	// CreatedAt When the job was created
 	CreatedAt time.Time `json:"created_at"`
-	Creator   UserInfo  `json:"creator"`
+	Creator   *UserInfo `json:"creator,omitempty"`
 
 	// DurationMs Job duration in milliseconds, computed from status_events. End time is the last non-CACHED event so trailing cache hits don't inflate duration. Null while the job is still running or when timestamps are missing.
-	DurationMs     *int                   `json:"duration_ms,omitempty"`
-	Evaluation     AgentJobEvaluation     `json:"evaluation"`
-	FeedbackReview AgentJobFeedbackNested `json:"feedback_review"`
-	Id             *openapi_types.UUID    `json:"id,omitempty"`
+	DurationMs     *int                    `json:"duration_ms,omitempty"`
+	Evaluation     *AgentJobEvaluation     `json:"evaluation,omitempty"`
+	FeedbackReview *AgentJobFeedbackNested `json:"feedback_review,omitempty"`
+	Id             *openapi_types.UUID     `json:"id,omitempty"`
 
 	// JobInputs List of input data provided to the agent job
 	JobInputs     *[]JobInput `json:"job_inputs,omitempty"`
