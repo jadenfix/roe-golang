@@ -40,10 +40,9 @@ func TestHandMaintainedWrapperContractsExposeMethods(t *testing.T) {
 	}
 
 	handMaintained := map[string]reflect.Type{
-		"agents":         reflect.TypeOf(&AgentsAPI{}),
-		"knowledge_base": reflect.TypeOf(&KnowledgeBaseAPI{}),
-		"policies":       reflect.TypeOf(&PoliciesAPI{}),
-		"users":          reflect.TypeOf(&UsersAPI{}),
+		"agents":   reflect.TypeOf(&AgentsAPI{}),
+		"policies": reflect.TypeOf(&PoliciesAPI{}),
+		"users":    reflect.TypeOf(&UsersAPI{}),
 	}
 	namespaces := map[string]reflect.Type{
 		"agents.jobs":       reflect.TypeOf(&AgentJobsAPI{}),
@@ -171,21 +170,5 @@ var handMaintainedTransports = map[string]map[string]operationTransport{
 	},
 	"users": {
 		"Me": {Method: "GET", Path: "/v1/users/current_user/"},
-	},
-	"knowledge_base": {
-		"List":           {Method: "GET", Path: "/v1/knowledge-base/"},
-		"Create":         {Method: "POST", Path: "/v1/knowledge-base/"},
-		"Retrieve":       {Method: "GET", Path: "/v1/knowledge-base/{id}/"},
-		"Delete":         {Method: "DELETE", Path: "/v1/knowledge-base/{id}/"},
-		"PollDraft":      {Method: "GET", Path: "/v1/knowledge-base/{id}/draft/"},
-		"PatchSelection": {Method: "PATCH", Path: "/v1/knowledge-base/{id}/selection/"},
-		"Regenerate":     {Method: "POST", Path: "/v1/knowledge-base/{id}/regenerate/"},
-		"Resolve":        {Method: "POST", Path: "/v1/knowledge-base/{id}/resolve/"},
-		"Finalize":       {Method: "POST", Path: "/v1/knowledge-base/{id}/finalize/"},
-		"Sync":           {Method: "POST", Path: "/v1/knowledge-base/{id}/sync/"},
-		"Unlink":         {Method: "DELETE", Path: "/v1/knowledge-base/{id}/unlink/"},
-		"Catalog":        {Method: "GET", Path: "/v1/knowledge-base/catalog/"},
-		"LensByAtlasId":  {Method: "GET", Path: "/v1/knowledge-base/lens/{atlas_lens_id}/"},
-		"ImportLens":     {Method: "POST", Path: "/v1/knowledge-base/import-lens/"},
 	},
 }

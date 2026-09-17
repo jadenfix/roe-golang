@@ -33,6 +33,12 @@ func main() {
 
 	normalizeNode(document)
 
+	// Removing other enums must not rename these existing public constants.
+	components := document["components"].(map[string]any)
+	schemas := components["schemas"].(map[string]any)
+	statusEnum := schemas["StatusEnum"].(map[string]any)
+	statusEnum["x-enum-varnames"] = []string{"StatusEnumActive", "StatusEnumError"}
+
 	if openapi, ok := document["openapi"].(string); ok && strings.HasPrefix(openapi, "3.1") {
 		document["openapi"] = "3.0.3"
 	}
