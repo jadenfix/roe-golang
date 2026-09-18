@@ -9,6 +9,14 @@ import (
 	"github.com/roe-ai/roe-golang/generated"
 )
 
+func TestRawClientConnectionStatusConstants(t *testing.T) {
+	var active generated.StatusEnum = generated.StatusEnumActive
+	var failed generated.StatusEnum = generated.StatusEnumError
+	if active != "active" || failed != "error" {
+		t.Fatalf("unexpected connection statuses: %q, %q", active, failed)
+	}
+}
+
 // Verifies client.Raw() returns a generated client wired with the same base
 // URL, http.Doer, and auth editor as the ergonomic SDK surface. The test goes
 // through the generic *generated.Client plumbing rather than a specific
