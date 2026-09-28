@@ -482,11 +482,11 @@ func omitWhenEmptyCondition(param parameter) (string, error) {
 		"float32", "float64":
 		return fmt.Sprintf("%s != 0", param.Name), nil
 	}
-	// Any other map type: len() is nil-safe and also drops an allocated-but-empty
-	// map, which is what "omit when empty" means for a JSON body field. Kept
+	// Any other map or slice type: len() is nil-safe and also drops an allocated-
+	// but-empty value, which is what "omit when empty" means for a JSON body field. Kept
 	// below the map[string]any case above so that existing generated output for
 	// that type is unchanged.
-	if strings.HasPrefix(param.GoType, "map[") {
+	if strings.HasPrefix(param.GoType, "map[") || strings.HasPrefix(param.GoType, "[]") {
 		return fmt.Sprintf("len(%s) > 0", param.Name), nil
 	}
 	return "", fmt.Errorf("%s has omit_when_empty with unsupported go_type %q", param.Name, param.GoType)

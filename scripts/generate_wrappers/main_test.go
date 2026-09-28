@@ -87,3 +87,20 @@ func TestOmitWhenEmptyConditionSupportsTypedMaps(t *testing.T) {
 		t.Fatal("expected an error for a genuinely unsupported go_type")
 	}
 }
+
+func TestOmitWhenEmptyConditionSupportsSlices(t *testing.T) {
+	// A nil slice would otherwise marshal to JSON null, which DRF list fields reject.
+	for _, goType := range []string{"[]string", "[]map[string]any"} {
+		got, err := omitWhenEmptyCondition(parameter{Name: "tableNames", GoType: goType})
+		if err != nil {
+			t.Fatalf("%s: unexpected error: %v", goType, err)
+		}
+		if got != "len(tableNames) > 0" {
+			t.Fatalf("%s: expected len(tableNames) > 0, got %s", goType, got)
+		}
+	}
+
+	if _, err := omitWhenEmptyCondition(parameter{Name: "thing", GoType: "*[]string"}); err == nil {
+		t.Fatal("expected an error for a genuinely unsupported go_type")
+	}
+}
