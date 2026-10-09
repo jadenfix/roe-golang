@@ -101,3 +101,20 @@ func TestJobBatchWaitPreservesOrder(t *testing.T) {
 		}
 	}
 }
+
+func TestConvertBatchResultAllowsErrorCodeOnFailedJob(t *testing.T) {
+	status, agentID, versionID := JobFailure, "agent-id", "version-id"
+	res, err := convertBatchResult(AgentJobResultBatch{
+		ID:             "job-1",
+		Status:         &status,
+		Result:         "TIMEOUT",
+		AgentID:        &agentID,
+		AgentVersionID: &versionID,
+	})
+	if err != nil {
+		t.Fatalf("convertBatchResult: %v", err)
+	}
+	if res.Status == nil || *res.Status != JobFailure || len(res.Outputs) != 0 {
+		t.Fatalf("unexpected result %+v", res)
+	}
+}

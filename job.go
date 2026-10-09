@@ -360,6 +360,10 @@ func convertBatchResult(res AgentJobResultBatch) (AgentJobResult, error) {
 	case nil:
 		// No result data - outputs remains empty
 	default:
+		if isFailed {
+			// Failed jobs may carry an error code here instead of outputs.
+			break
+		}
 		// Try to unmarshal as array of AgentDatum
 		var direct []AgentDatum
 		bytes, err := json.Marshal(res.Result)
