@@ -19,6 +19,7 @@ import (
 	"net/textproto"
 	"net/url"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -568,8 +569,18 @@ func (c *httpClient) postDynamicInputsHeadersWithContext(ctx context.Context, pa
 			}
 		case fmt.Stringer:
 			form.Set(key, v.String())
+		case nil:
+			// Skipped, as roe-python skips None.
 		default:
-			form.Set(key, fmt.Sprintf("%v", v))
+			if k := reflect.ValueOf(v).Kind(); k == reflect.Slice || k == reflect.Map {
+				b, err := json.Marshal(v)
+				if err != nil {
+					return fmt.Errorf("marshal input %s: %w", key, err)
+				}
+				form.Set(key, string(b))
+			} else {
+				form.Set(key, fmt.Sprintf("%v", v))
+			}
 		}
 	}
 

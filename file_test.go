@@ -130,6 +130,43 @@ func TestPostDynamicInputsWithURLInput(t *testing.T) {
 	}
 }
 
+func TestPostDynamicInputsEncodesSlicesAndMapsAsJSON(t *testing.T) {
+	want := map[string]string{
+		"list": `["a","b"]`,
+		"obj":  `{"k":1}`,
+		"flag": "true",
+		"n":    "3",
+	}
+	server := newTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			t.Errorf("parse form: %v", err)
+		}
+		if len(r.PostForm) != len(want) {
+			t.Errorf("unexpected form fields: %v", r.PostForm)
+		}
+		for k, v := range want {
+			if got := r.PostForm.Get(k); got != v {
+				t.Errorf("%s = %q, want %q", k, got, v)
+			}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer server.Close()
+
+	cfg := Config{APIKey: "k", OrganizationID: "org", BaseURL: server.URL, Timeout: time.Second}
+	client := newHTTPClient(cfg, newAuth(cfg))
+	defer client.close()
+
+	inputs := map[string]any{"list": []string{"a", "b"}, "obj": map[string]any{"k": 1}, "flag": true, "n": 3, "none": nil}
+	if err := client.postDynamicInputs("/upload", inputs, nil, nil, nil); err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if err := client.postDynamicInputs("/upload", map[string]any{"bad": []any{make(chan int)}}, nil, nil, nil); err == nil {
+		t.Fatalf("expected marshal error")
+	}
+}
+
 func TestPrepareMultipartFileKeepsKnownMimeType(t *testing.T) {
 	cases := []struct {
 		file FileUpload
