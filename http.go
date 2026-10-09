@@ -663,6 +663,10 @@ func (c *httpClient) prepareMultipartFile(file FileUpload) (io.ReadCloser, strin
 
 	filename := file.filename()
 	mimeType := file.mimeType()
+	if file.MimeType != "" || mimeType != "application/octet-stream" {
+		// Explicit or extension-based type; only sniff content when neither is known.
+		return rc, filename, mimeType, nil
+	}
 
 	rcWithMime, detected, err := detectMimeType(rc, filename, mimeType)
 	if err != nil {
