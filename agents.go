@@ -360,27 +360,14 @@ func (v *AgentVersionsAPI) ListPaginated(agentID string, params *ListVersionsPar
 	return v.ListPaginatedWithContext(context.Background(), agentID, params)
 }
 
+// ListPaginatedWithContext returns every version in Results: the endpoint
+// returns a plain list and does not paginate, so params are ignored.
 func (v *AgentVersionsAPI) ListPaginatedWithContext(ctx context.Context, agentID string, params *ListVersionsParams) (PaginatedResponse[AgentVersion], error) {
-	query := map[string]string{}
-	if params != nil {
-		if params.Page > 0 {
-			query["page"] = fmt.Sprintf("%d", params.Page)
-		}
-		if params.PageSize > 0 {
-			query["page_size"] = fmt.Sprintf("%d", params.PageSize)
-		}
-		if params.GetSupportsEval != nil {
-			query["get_supports_eval"] = fmt.Sprintf("%t", *params.GetSupportsEval)
-		}
-	}
-	var resp PaginatedResponse[AgentVersion]
-	if err := v.agentsAPI.httpClient.getWithContext(ctx, fmt.Sprintf("/v1/agents/%s/versions/", agentID), query, &resp); err != nil {
+	versions, err := v.ListWithContext(ctx, agentID)
+	if err != nil {
 		return PaginatedResponse[AgentVersion]{}, err
 	}
-	for i := range resp.Results {
-		resp.Results[i].setAgentsAPI(v.agentsAPI)
-	}
-	return resp, nil
+	return PaginatedResponse[AgentVersion]{Count: len(versions), Results: versions}, nil
 }
 
 func (v *AgentVersionsAPI) Retrieve(agentID, versionID string, getSupportsEval *bool) (AgentVersion, error) {

@@ -514,3 +514,25 @@ func assertJSONBody(t *testing.T, r *http.Request, want map[string]any) {
 		t.Fatalf("unexpected body: got %#v, want %#v", got, want)
 	}
 }
+
+func TestAgentVersionsListPaginatedDecodesPlainList(t *testing.T) {
+	server := newTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[{"id":"v1"},{"id":"v2"}]`))
+	}))
+	defer server.Close()
+
+	client, err := NewClientWithConfig(Config{APIKey: "k", OrganizationID: "org", BaseURL: server.URL, Timeout: time.Second})
+	if err != nil {
+		t.Fatalf("new client: %v", err)
+	}
+	defer client.Close()
+
+	resp, err := client.Agents.Versions.ListPaginated("agent-id", &ListVersionsParams{Page: 1})
+	if err != nil {
+		t.Fatalf("list paginated: %v", err)
+	}
+	if resp.Count != 2 || len(resp.Results) != 2 {
+		t.Fatalf("expected 2 versions, got %+v", resp)
+	}
+}
