@@ -636,6 +636,7 @@ func (c *httpClient) postDynamicInputsHeadersWithContext(ctx context.Context, pa
 			return err
 		}
 		fileReader.Close()
+		openedReaders = openedReaders[:0] // closed; don't close it again on a later error
 	}
 
 	if err := writer.Close(); err != nil {

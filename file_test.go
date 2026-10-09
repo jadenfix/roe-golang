@@ -171,3 +171,31 @@ func TestPrepareMultipartFileClosesSniffedReader(t *testing.T) {
 		t.Fatalf("expected the caller's reader to be closed")
 	}
 }
+
+type closeCounter struct {
+	io.Reader
+	closes int
+}
+
+func (c *closeCounter) Close() error {
+	c.closes++
+	return nil
+}
+
+func TestMultipartUploadClosesEachReaderOnceWhenALaterFileFails(t *testing.T) {
+	// Map order decides which file goes first, so repeat until the good
+	// reader has been copied before the missing path fails.
+	for i := 0; i < 20; i++ {
+		src := &closeCounter{Reader: strings.NewReader("hello")}
+		err := (&httpClient{}).postDynamicInputs("/upload", map[string]any{
+			"good":    FileUpload{Reader: src, Filename: "a.txt"},
+			"missing": FileUpload{Path: "/nonexistent/roe-upload.txt"},
+		}, nil, nil, nil)
+		if err == nil {
+			t.Fatalf("expected an error for the missing file")
+		}
+		if src.closes > 1 {
+			t.Fatalf("caller's reader closed %d times, want at most 1", src.closes)
+		}
+	}
+}
