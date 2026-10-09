@@ -139,3 +139,20 @@ func TestHTTPClientRetrySleepHonorsContextCancellation(t *testing.T) {
 		t.Fatalf("expected cancellation to short-circuit retry sleep, took %s", elapsed)
 	}
 }
+
+func TestHTTPClientNegativeMaxRetriesStillSendsRequest(t *testing.T) {
+	server := newTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer server.Close()
+
+	cfg := Config{APIKey: "k", OrganizationID: "org", BaseURL: server.URL, Timeout: time.Second, MaxRetries: -1}
+	client := newHTTPClient(cfg, newAuth(cfg))
+	defer client.close()
+
+	var out map[string]bool
+	if err := client.get("/ok", nil, &out); err != nil || !out["ok"] {
+		t.Fatalf("get = %v, %v", out, err)
+	}
+}
