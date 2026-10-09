@@ -139,7 +139,7 @@ func (c *httpClient) doRequest(ctx context.Context, method, path string, headers
 	}
 
 	var lastErr error
-	maxAttempts := c.cfg.MaxRetries + 1
+	maxAttempts := max(c.cfg.MaxRetries, 0) + 1
 
 	for attempt := 0; attempt < maxAttempts; attempt++ {
 		if err := ctx.Err(); err != nil {
