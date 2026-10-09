@@ -149,3 +149,25 @@ func TestPrepareMultipartFileKeepsKnownMimeType(t *testing.T) {
 		}
 	}
 }
+
+type closeTracker struct {
+	io.Reader
+	closed bool
+}
+
+func (c *closeTracker) Close() error {
+	c.closed = true
+	return nil
+}
+
+func TestPrepareMultipartFileClosesSniffedReader(t *testing.T) {
+	src := &closeTracker{Reader: strings.NewReader("hello")}
+	rc, _, _, err := (&httpClient{}).prepareMultipartFile(FileUpload{Reader: src})
+	if err != nil {
+		t.Fatalf("prepareMultipartFile: %v", err)
+	}
+	rc.Close()
+	if !src.closed {
+		t.Fatalf("expected the caller's reader to be closed")
+	}
+}

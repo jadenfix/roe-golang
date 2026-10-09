@@ -698,7 +698,10 @@ func detectMimeType(rc io.ReadCloser, filename, fallback string) (io.ReadCloser,
 	}
 
 	detected := http.DetectContentType(buf)
-	combined := io.NopCloser(io.MultiReader(bytes.NewReader(buf), rc))
+	combined := struct {
+		io.Reader
+		io.Closer
+	}{io.MultiReader(bytes.NewReader(buf), rc), rc}
 	if detected != "" {
 		return combined, detected, nil
 	}
