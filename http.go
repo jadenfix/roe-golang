@@ -116,6 +116,11 @@ func (c *httpClient) buildURL(path string, query map[string]string) (string, err
 	return u.String(), nil
 }
 
+// skipRetryHeader marks a request that gets exactly one attempt because
+// retrying it could repeat a side effect (e.g. a billed agent run). doRequest
+// strips it before sending.
+const skipRetryHeader = "X-Roe-Skip-Retry"
+
 func (c *httpClient) doRequest(ctx context.Context, method, path string, headers http.Header, body io.Reader, query map[string]string) ([]byte, error) {
 	if ctx == nil {
 		ctx = context.Background()
@@ -140,6 +145,8 @@ func (c *httpClient) doRequest(ctx context.Context, method, path string, headers
 
 	var lastErr error
 	maxAttempts := max(c.cfg.MaxRetries, 0) + 1
+	noRetry := headers.Get(skipRetryHeader) != ""
+	headers.Del(skipRetryHeader)
 
 	for attempt := 0; attempt < maxAttempts; attempt++ {
 		if err := ctx.Err(); err != nil {
@@ -166,7 +173,7 @@ func (c *httpClient) doRequest(ctx context.Context, method, path string, headers
 		duration := time.Since(start)
 
 		if err != nil {
-			if !c.shouldRetry(nil, err, attempt) {
+			if noRetry || !c.shouldRetry(nil, err, attempt) {
 				return nil, err
 			}
 			lastErr = err
@@ -193,7 +200,7 @@ func (c *httpClient) doRequest(ctx context.Context, method, path string, headers
 		apiErr := apiErrorFromResponse(resp.StatusCode, respBody, resp.Header, c.cfg.RequestIDHeader)
 		lastErr = apiErr
 
-		if c.shouldRetry(resp, nil, attempt) {
+		if !noRetry && c.shouldRetry(resp, nil, attempt) {
 			c.logf("retrying after status %d (attempt %d/%d)", resp.StatusCode, attempt+1, maxAttempts)
 			if err := c.sleepWithContext(ctx, c.retryDelay(resp, attempt)); err != nil {
 				return nil, err
