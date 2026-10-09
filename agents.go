@@ -112,6 +112,12 @@ func (a *AgentsAPI) CreateWithContext(ctx context.Context, name, engineClassID s
 		"input_definitions": inputDefs,
 		"engine_config":     engineConfig,
 	}
+	if inputDefs == nil {
+		payload["input_definitions"] = []map[string]any{}
+	}
+	if engineConfig == nil {
+		payload["engine_config"] = map[string]any{}
+	}
 	if versionName != "" {
 		payload["version_name"] = versionName
 	}
@@ -173,8 +179,9 @@ func agentUpdatePayload(name string, disableCache, cacheFailedJobs *bool) map[st
 }
 
 func agentReplacePayload(name string, disableCache, cacheFailedJobs *bool) map[string]any {
-	payload := map[string]any{
-		"name": name,
+	payload := map[string]any{}
+	if name != "" {
+		payload["name"] = name
 	}
 	if disableCache != nil {
 		payload["disable_cache"] = *disableCache
@@ -430,6 +437,12 @@ func (v *AgentVersionsAPI) CreateWithContext(ctx context.Context, agentID string
 		"input_definitions": inputDefs,
 		"engine_config":     engineConfig,
 	}
+	if inputDefs == nil {
+		payload["input_definitions"] = []map[string]any{}
+	}
+	if engineConfig == nil {
+		payload["engine_config"] = map[string]any{}
+	}
 	if versionName != "" {
 		payload["version_name"] = versionName
 	}
@@ -475,9 +488,12 @@ func agentVersionUpdatePayload(versionName, description string) map[string]any {
 }
 
 func agentVersionReplacePayload(versionName, description string) map[string]any {
-	payload := map[string]any{
-		"version_name": versionName,
-		"description":  description,
+	payload := map[string]any{}
+	if versionName != "" {
+		payload["version_name"] = versionName
+	}
+	if description != "" {
+		payload["description"] = description
 	}
 	return payload
 }
