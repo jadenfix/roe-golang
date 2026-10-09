@@ -232,6 +232,10 @@ func (b *JobBatch) WaitContext(ctx context.Context, interval time.Duration, time
 			} else {
 				received := map[string]AgentJobResult{}
 				for _, res := range resultsBatch {
+					if cached, ok := b.statuses[res.ID]; ok && res.Status == nil {
+						// The results endpoint may omit status; use the one just polled.
+						res.Status = &cached.Status
+					}
 					converted, err := convertBatchResult(res)
 					if err != nil {
 						return nil, err
