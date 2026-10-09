@@ -235,12 +235,15 @@ func (a *AgentsAPI) RunWithContext(ctx context.Context, agentID string, timeoutS
 	return newJob(a, jobID, timeoutSeconds), nil
 }
 
-// RunMany submits batch jobs.
+// RunMany submits batch jobs. If a later chunk of inputs fails, the error comes
+// with a non-nil batch holding the jobs already submitted.
 func (a *AgentsAPI) RunMany(agentID string, batchInputs []map[string]any, timeoutSeconds int, metadata map[string]any, opts ...RunOptions) (*JobBatch, error) {
 	return a.RunManyWithContext(context.Background(), agentID, batchInputs, timeoutSeconds, metadata, opts...)
 }
 
-// RunManyWithContext submits batch jobs with a caller-supplied context.
+// RunManyWithContext submits batch jobs with a caller-supplied context. If a
+// later chunk of inputs fails, the error comes with a non-nil batch holding
+// the jobs already submitted.
 func (a *AgentsAPI) RunManyWithContext(ctx context.Context, agentID string, batchInputs []map[string]any, timeoutSeconds int, metadata map[string]any, opts ...RunOptions) (*JobBatch, error) {
 	if agentID == "" {
 		return nil, fmt.Errorf("agentID cannot be empty")
@@ -250,9 +253,15 @@ func (a *AgentsAPI) RunManyWithContext(ctx context.Context, agentID string, batc
 	}
 	extraHeaders := resolveRunOptions(opts).extraHeaders()
 	jobIDs := []string{}
+	partial := func(err error) (*JobBatch, error) {
+		if len(jobIDs) == 0 {
+			return nil, err
+		}
+		return newJobBatch(a, jobIDs, timeoutSeconds), err
+	}
 	for _, chunk := range chunkAny(batchInputs, maxBatchSize) {
 		if err := ctx.Err(); err != nil {
-			return nil, err
+			return partial(err)
 		}
 		var ids []string
 		payload := map[string]any{"inputs": chunk}
@@ -260,7 +269,7 @@ func (a *AgentsAPI) RunManyWithContext(ctx context.Context, agentID string, batc
 			payload["metadata"] = metadata
 		}
 		if err := a.httpClient.postJSONHeadersWithContext(ctx, fmt.Sprintf("/v1/agents/run/%s/async/many/", agentID), payload, nil, &ids, extraHeaders); err != nil {
-			return nil, err
+			return partial(err)
 		}
 		jobIDs = append(jobIDs, ids...)
 	}

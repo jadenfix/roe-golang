@@ -159,3 +159,29 @@ func TestJobBatchWaitUsesPolledStatusForFailedJobResult(t *testing.T) {
 		t.Fatalf("unexpected results %+v", results)
 	}
 }
+
+func TestRunManyReturnsSubmittedJobsWhenALaterChunkFails(t *testing.T) {
+	requests := 0
+	server := newTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		if requests > 1 {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		ids := make([]string, maxBatchSize)
+		for i := range ids {
+			ids[i] = "job"
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(ids)
+	}))
+	defer server.Close()
+
+	client := newAgentsTestClient(t, server.URL)
+	defer client.Close()
+
+	batch, err := client.Agents.RunMany("agent-id", make([]map[string]any, maxBatchSize+1), 0, nil)
+	if err == nil || batch == nil || len(batch.Jobs()) != maxBatchSize {
+		t.Fatalf("RunMany = %v, %v; want the first chunk's jobs and an error", batch, err)
+	}
+}
