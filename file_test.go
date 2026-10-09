@@ -2,6 +2,7 @@ package roe
 
 import (
 	"io"
+	"mime"
 	"net/http"
 	"os"
 	"strings"
@@ -126,5 +127,25 @@ func TestPostDynamicInputsWithURLInput(t *testing.T) {
 	}, nil, &out, nil)
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
+	}
+}
+
+func TestPrepareMultipartFileKeepsKnownMimeType(t *testing.T) {
+	cases := []struct {
+		file FileUpload
+		want string
+	}{
+		{FileUpload{Reader: strings.NewReader("a,b\n1,2\n"), Filename: "data.csv"}, mime.TypeByExtension(".csv")},
+		{FileUpload{Reader: strings.NewReader("{}"), MimeType: "application/json"}, "application/json"},
+	}
+	for _, tc := range cases {
+		rc, _, got, err := (&httpClient{}).prepareMultipartFile(tc.file)
+		if err != nil {
+			t.Fatalf("prepareMultipartFile: %v", err)
+		}
+		rc.Close()
+		if got != tc.want {
+			t.Fatalf("mime type = %q, want %q", got, tc.want)
+		}
 	}
 }
