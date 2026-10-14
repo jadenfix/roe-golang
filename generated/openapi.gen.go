@@ -157,6 +157,27 @@ func (e ConnectorTypeEnum) Valid() bool {
 	}
 }
 
+// Defines values for ReviewStateEnum.
+const (
+	Agreed     ReviewStateEnum = "agreed"
+	Disagreed  ReviewStateEnum = "disagreed"
+	Unreviewed ReviewStateEnum = "unreviewed"
+)
+
+// Valid indicates whether the value is a known member of the ReviewStateEnum enum.
+func (e ReviewStateEnum) Valid() bool {
+	switch e {
+	case Agreed:
+		return true
+	case Disagreed:
+		return true
+	case Unreviewed:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ReviewStatusEnum.
 const (
 	Approved ReviewStatusEnum = "approved"
@@ -1105,7 +1126,8 @@ type ListAgentJob struct {
 	LastUpdatedAt *time.Time  `json:"last_updated_at,omitempty"`
 
 	// Metadata Key-value pairs of metadata associated with the job
-	Metadata *map[string]string `json:"metadata,omitempty"`
+	Metadata    *map[string]string `json:"metadata,omitempty"`
+	ReviewState *ReviewStateEnum   `json:"review_state,omitempty"`
 
 	// StatusCode Current status code of the job (0=PENDING, 1=STARTED, 2=RETRY, 3=SUCCESS, 4=FAILURE, 5=CANCELLED, 6=CACHED)
 	StatusCode   int                         `json:"status_code"`
@@ -1329,6 +1351,11 @@ type ResendAgentJobWebhookRequest struct {
 	WebhookId *openapi_types.UUID `json:"webhook_id,omitempty"`
 }
 
+// ReviewStateEnum * `unreviewed` - Unreviewed
+// * `agreed` - Agreed
+// * `disagreed` - Disagreed
+type ReviewStateEnum string
+
 // ReviewStatusEnum * `pending` - Pending Review
 // * `approved` - Approved
 // * `rejected` - Rejected
@@ -1378,7 +1405,9 @@ type SkillSetDependentAgentInfo struct {
 
 // SkillSetGenerationRun A generation already in flight, so a page can reattach to it.
 type SkillSetGenerationRun struct {
-	Id *openapi_types.UUID `json:"id,omitempty"`
+	// Error Why the run failed, when it reported a reason.
+	Error *string             `json:"error,omitempty"`
+	Id    *openapi_types.UUID `json:"id,omitempty"`
 
 	// SseEndpoint SSE endpoint URL for real-time status updates
 	SseEndpoint *string `json:"sse_endpoint,omitempty"`
@@ -1935,8 +1964,9 @@ type AgentsJobsListParams struct {
 	Page *int `form:"page,omitempty" json:"page,omitempty"`
 
 	// PageSize Number of results to return per page.
-	PageSize *int    `form:"page_size,omitempty" json:"page_size,omitempty"`
-	Search   *string `form:"search,omitempty" json:"search,omitempty"`
+	PageSize    *int    `form:"page_size,omitempty" json:"page_size,omitempty"`
+	ReviewState *string `form:"review_state,omitempty" json:"review_state,omitempty"`
+	Search      *string `form:"search,omitempty" json:"search,omitempty"`
 
 	// SemanticString Semantic search string for finding similar jobs using embeddings
 	SemanticString *string `form:"semantic_string,omitempty" json:"semantic_string,omitempty"`
@@ -5791,6 +5821,22 @@ func NewAgentsJobsListRequest(server string, agentId openapi_types.UUID, params 
 		if params.PageSize != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "page_size", *params.PageSize, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ReviewState != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "review_state", *params.ReviewState, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

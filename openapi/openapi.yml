@@ -631,6 +631,10 @@ paths:
         schema:
           type: integer
       - in: query
+        name: review_state
+        schema:
+          type: string
+      - in: query
         name: search
         schema:
           type: string
@@ -5693,6 +5697,10 @@ components:
           - $ref: '#/components/schemas/AgentJobFeedbackNested'
           - type: 'null'
           readOnly: true
+        review_state:
+          allOf:
+          - $ref: '#/components/schemas/ReviewStateEnum'
+          readOnly: true
         creator:
           oneOf:
           - $ref: '#/components/schemas/UserInfo'
@@ -5707,6 +5715,7 @@ components:
       - feedback_review
       - id
       - last_updated_at
+      - review_state
       - status_code
       - status_events
       - ui_fields
@@ -6199,6 +6208,16 @@ components:
           format: uuid
           description: Send to only this webhook. Omit to send to every active webhook
             on the agent.
+    ReviewStateEnum:
+      enum:
+      - unreviewed
+      - agreed
+      - disagreed
+      type: string
+      description: |-
+        * `unreviewed` - Unreviewed
+        * `agreed` - Agreed
+        * `disagreed` - Disagreed
     ReviewStatusEnum:
       enum:
       - pending
@@ -6345,12 +6364,17 @@ components:
           type: string
           readOnly: true
           description: building, succeeded, or failed.
+        error:
+          type: string
+          readOnly: true
+          description: Why the run failed, when it reported a reason.
         started_at:
           type: string
           format: date-time
           readOnly: true
           description: When the run started — the UI shows elapsed time from this.
       required:
+      - error
       - id
       - sse_endpoint
       - started_at
