@@ -100,6 +100,7 @@ const (
 	Sharepoint     ConnectorTypeEnum = "sharepoint"
 	Shield         ConnectorTypeEnum = "shield"
 	Sift           ConnectorTypeEnum = "sift"
+	SiftApi        ConnectorTypeEnum = "sift_api"
 	Snowflake      ConnectorTypeEnum = "snowflake"
 	Socure         ConnectorTypeEnum = "socure"
 	Stripe         ConnectorTypeEnum = "stripe"
@@ -141,6 +142,8 @@ func (e ConnectorTypeEnum) Valid() bool {
 	case Shield:
 		return true
 	case Sift:
+		return true
+	case SiftApi:
 		return true
 	case Snowflake:
 		return true
@@ -869,6 +872,7 @@ type ConnectorMetadata struct {
 // * `web_application` - WEB_APPLICATION
 // * `shield` - SHIELD
 // * `sift` - SIFT
+// * `sift_api` - SIFT_API
 // * `custom_api` - CUSTOM_API
 // * `lexis_nexis` - LEXIS_NEXIS
 // * `sardine` - SARDINE
@@ -898,6 +902,7 @@ type CreateConnectionRequest struct {
 	// * `web_application` - WEB_APPLICATION
 	// * `shield` - SHIELD
 	// * `sift` - SIFT
+	// * `sift_api` - SIFT_API
 	// * `custom_api` - CUSTOM_API
 	// * `lexis_nexis` - LEXIS_NEXIS
 	// * `sardine` - SARDINE
@@ -1641,6 +1646,7 @@ type TestConnectionCredentialsRequest struct {
 	// * `web_application` - WEB_APPLICATION
 	// * `shield` - SHIELD
 	// * `sift` - SIFT
+	// * `sift_api` - SIFT_API
 	// * `custom_api` - CUSTOM_API
 	// * `lexis_nexis` - LEXIS_NEXIS
 	// * `sardine` - SARDINE
