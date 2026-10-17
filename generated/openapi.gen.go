@@ -101,6 +101,8 @@ const (
 	Shield         ConnectorTypeEnum = "shield"
 	Sift           ConnectorTypeEnum = "sift"
 	SiftApi        ConnectorTypeEnum = "sift_api"
+	Slack          ConnectorTypeEnum = "slack"
+	Smtp           ConnectorTypeEnum = "smtp"
 	Snowflake      ConnectorTypeEnum = "snowflake"
 	Socure         ConnectorTypeEnum = "socure"
 	Stripe         ConnectorTypeEnum = "stripe"
@@ -144,6 +146,10 @@ func (e ConnectorTypeEnum) Valid() bool {
 	case Sift:
 		return true
 	case SiftApi:
+		return true
+	case Slack:
+		return true
+	case Smtp:
 		return true
 	case Snowflake:
 		return true
@@ -754,7 +760,7 @@ type ColorEnum string
 // Connection Serializer for Connection model.
 // Returns:
 // - config: Non-sensitive config from DB
-// - auth_config: Actual auth credentials from Secrets Manager (not the internal reference)
+// - auth_config: Manual credentials, or safe metadata for managed Zendesk OAuth
 type Connection struct {
 	AuthConfig              *map[string]interface{} `json:"auth_config,omitempty"`
 	BrowserSessionExpiresAt *time.Time              `json:"browser_session_expires_at,omitempty"`
@@ -808,7 +814,7 @@ type ConnectionDeleteErrorResponse struct {
 }
 
 // ConnectionList Lightweight serializer for listing connections.
-// Only returns metadata, no auth_config (avoids Secrets Manager calls).
+// Returns metadata without fetching credentials from Secrets Manager.
 type ConnectionList struct {
 	Config interface{} `json:"config,omitempty"`
 
@@ -883,6 +889,8 @@ type ConnectorMetadata struct {
 // * `socure` - SOCURE
 // * `custom_mcp` - CUSTOM_MCP
 // * `metabase` - METABASE
+// * `slack` - SLACK
+// * `smtp` - SMTP
 type ConnectorTypeEnum string
 
 // CreateConnectionRequest Serializer for creating connections.
@@ -913,6 +921,8 @@ type CreateConnectionRequest struct {
 	// * `socure` - SOCURE
 	// * `custom_mcp` - CUSTOM_MCP
 	// * `metabase` - METABASE
+	// * `slack` - SLACK
+	// * `smtp` - SMTP
 	ConnectorType  ConnectorTypeEnum   `json:"connector_type"`
 	Description    *string             `json:"description,omitempty"`
 	DynamicInputs  *map[string]string  `json:"dynamic_inputs,omitempty"`
@@ -1226,11 +1236,10 @@ type PatchedBaseAgentUpdateRequest struct {
 
 // PatchedUpdateConnectionRequest Serializer for updating connections.
 //
-// Cross-state Pydantic validation (config + auth) lives in the view's
-// “update()“ method now -- see “connections.views.
-// ConnectionRetrieveUpdateDestroyView.update“. That path is the single
-// source of truth for canonical validation + write, mirrors the create
-// path's “service.create_connection_with_secrets“, AND correctly
+// Cross-state Pydantic validation (config + auth) lives in
+// “connections.services.connection.update_connection_with_secrets“. That
+// path is the single source of truth for canonical validation + write,
+// mirrors the create path's “create_connection_with_secrets“, AND correctly
 // handles the SM-fetch-failure case for the unchanged-auth branch
 // (returns 502 / opportunistic backfill instead of silently corrupting
 // the fingerprint by hashing “{}“). Re-running the same validation
@@ -1657,17 +1666,18 @@ type TestConnectionCredentialsRequest struct {
 	// * `socure` - SOCURE
 	// * `custom_mcp` - CUSTOM_MCP
 	// * `metabase` - METABASE
+	// * `slack` - SLACK
+	// * `smtp` - SMTP
 	ConnectorType ConnectorTypeEnum  `json:"connector_type"`
 	DynamicInputs *map[string]string `json:"dynamic_inputs,omitempty"`
 }
 
 // UpdateConnectionRequest Serializer for updating connections.
 //
-// Cross-state Pydantic validation (config + auth) lives in the view's
-// “update()“ method now -- see “connections.views.
-// ConnectionRetrieveUpdateDestroyView.update“. That path is the single
-// source of truth for canonical validation + write, mirrors the create
-// path's “service.create_connection_with_secrets“, AND correctly
+// Cross-state Pydantic validation (config + auth) lives in
+// “connections.services.connection.update_connection_with_secrets“. That
+// path is the single source of truth for canonical validation + write,
+// mirrors the create path's “create_connection_with_secrets“, AND correctly
 // handles the SM-fetch-failure case for the unchanged-auth branch
 // (returns 502 / opportunistic backfill instead of silently corrupting
 // the fingerprint by hashing “{}“). Re-running the same validation
