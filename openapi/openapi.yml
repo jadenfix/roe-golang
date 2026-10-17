@@ -4930,7 +4930,7 @@ components:
         Serializer for Connection model.
         Returns:
         - config: Non-sensitive config from DB
-        - auth_config: Actual auth credentials from Secrets Manager (not the internal reference)
+        - auth_config: Manual credentials, or safe metadata for managed Zendesk OAuth
       properties:
         id:
           type: string
@@ -5047,7 +5047,7 @@ components:
       type: object
       description: |-
         Lightweight serializer for listing connections.
-        Only returns metadata, no auth_config (avoids Secrets Manager calls).
+        Returns metadata without fetching credentials from Secrets Manager.
       properties:
         id:
           type: string
@@ -5204,6 +5204,8 @@ components:
       - socure
       - custom_mcp
       - metabase
+      - slack
+      - smtp
       type: string
       description: |-
         * `snowflake` - SNOWFLAKE
@@ -5228,6 +5230,8 @@ components:
         * `socure` - SOCURE
         * `custom_mcp` - CUSTOM_MCP
         * `metabase` - METABASE
+        * `slack` - SLACK
+        * `smtp` - SMTP
     CreateConnectionRequest:
       type: object
       description: |-
@@ -5920,11 +5924,10 @@ components:
       description: |-
         Serializer for updating connections.
 
-        Cross-state Pydantic validation (config + auth) lives in the view's
-        ``update()`` method now -- see ``connections.views.
-        ConnectionRetrieveUpdateDestroyView.update``. That path is the single
-        source of truth for canonical validation + write, mirrors the create
-        path's ``service.create_connection_with_secrets``, AND correctly
+        Cross-state Pydantic validation (config + auth) lives in
+        ``connections.services.connection.update_connection_with_secrets``. That
+        path is the single source of truth for canonical validation + write,
+        mirrors the create path's ``create_connection_with_secrets``, AND correctly
         handles the SM-fetch-failure case for the unchanged-auth branch
         (returns 502 / opportunistic backfill instead of silently corrupting
         the fingerprint by hashing ``{}``). Re-running the same validation
@@ -6798,11 +6801,10 @@ components:
       description: |-
         Serializer for updating connections.
 
-        Cross-state Pydantic validation (config + auth) lives in the view's
-        ``update()`` method now -- see ``connections.views.
-        ConnectionRetrieveUpdateDestroyView.update``. That path is the single
-        source of truth for canonical validation + write, mirrors the create
-        path's ``service.create_connection_with_secrets``, AND correctly
+        Cross-state Pydantic validation (config + auth) lives in
+        ``connections.services.connection.update_connection_with_secrets``. That
+        path is the single source of truth for canonical validation + write,
+        mirrors the create path's ``create_connection_with_secrets``, AND correctly
         handles the SM-fetch-failure case for the unchanged-auth branch
         (returns 502 / opportunistic backfill instead of silently corrupting
         the fingerprint by hashing ``{}``). Re-running the same validation
